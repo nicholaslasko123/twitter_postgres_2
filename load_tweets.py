@@ -116,62 +116,60 @@ def insert_tweet(connection,tweet):
 
         # create/update the user
         sql = sqlalchemy.sql.text('''
-            INSERT INTO users
-                (
+            INSERT INTO users (
                 id_users,
+                screen_name,
+                name,
+                location,
+                description,
                 created_at,
                 updated_at,
-                id_urls,
                 friends_count,
                 listed_count,
                 favourites_count,
                 statuses_count,
                 protected,
                 verified,
-                screen_name,
-                name,
-                location,
-                description,
-                withheld_in_countries
-                )
-            VALUES
-              ( 
+                withheld_in_countries,
+                id_urls
+            )
+            VALUES (
                 :id_users,
+                :screen_name,
+                :name,
+                :location,
+                :description,
                 :created_at,
                 :updated_at,
-                :id_urls,
                 :friends_count,
                 :listed_count,
                 :favourites_count,
                 :statuses_count,
                 :protected,
                 :verified,
-                :screen_name,
-                :name,
-                :location,
-                :description,
-                :withheld_in_countries
-              )
-              ON CONFLICT DO NOTHING
+                :withheld_in_countries,
+                :id_urls
+            )
+            ON CONFLICT DO NOTHING
             ''')
+
         res = connection.execute(sql, {
             'id_users': tweet['user']['id'],
-            'created_at': remove_nulls(tweet['user']['created_at']),
-            'updated_at': remove_nulls(tweet['created_at']),
-            'id_urls': user_id_urls,
-            'friends_count': tweet['user']['friends_count'],
-            'listed_count': tweet['user']['listed_count'],
-            'favourites_count': tweet['user']['favourites_count'],
-            'statuses_count': tweet['user']['statuses_count'],
-            'protected': tweet['user']['protected'],
-            'verified': tweet['user']['verified'],
-            'screen_name': remove_nulls(tweet['user']['screen_name']),
-            'name': remove_nulls(tweet['user']['name']),
-            'location': remove_nulls(tweet['user']['location']),
-            'description': remove_nulls(tweet['user']['description']),
-            'withheld_in_countries': remove_nulls(tweet.get('withheld_in_countries', None))
-            }
-                                 )
+            'screen_name': remove_nulls(tweet['user'].get('screen_name')),
+            'name': remove_nulls(tweet['user'].get('name')),
+            'location': remove_nulls(tweet['user'].get('location')),
+            'description': remove_nulls(tweet['user'].get('description')),
+            'created_at': remove_nulls(tweet['user'].get('created_at')),
+            'updated_at': remove_nulls(tweet.get('created_at')),
+            'friends_count': tweet['user'].get('friends_count'),
+            'listed_count': tweet['user'].get('listed_count'),
+            'favourites_count': tweet['user'].get('favourites_count'),
+            'statuses_count': tweet['user'].get('statuses_count'),
+            'protected': tweet['user'].get('protected'),
+            'verified': tweet['user'].get('verified'),
+            'withheld_in_countries': remove_nulls(tweet.get('withheld_in_countries', None)),
+            'id_urls': user_id_urls
+        })
 
         ########################################
         # insert into the tweets table
@@ -236,7 +234,7 @@ def insert_tweet(connection,tweet):
             par = {'id_users': tweet.get('in_reply_to_user_id')}
             connection.execute(sql, par)
         # insert the tweet
-        sql=sqlalchemy.sql.text(f'''
+        sql = sqlalchemy.sql.text('''
         INSERT INTO tweets
             (
             id_tweets,
@@ -251,10 +249,10 @@ def insert_tweet(connection,tweet):
             withheld_copyright,
             withheld_in_countries,
             source,
+            lang,
             text,
             country_code,
             state_code,
-            lang,
             place_name,
             geo
             )
@@ -272,10 +270,10 @@ def insert_tweet(connection,tweet):
             :withheld_copyright,
             :withheld_in_countries,
             :source,
+            :lang,
             :text,
             :country_code,
             :state_code,
-            :lang,
             :place_name,
             :geo
             )
@@ -285,8 +283,8 @@ def insert_tweet(connection,tweet):
             'id_tweets': tweet['id'],
             'id_users': tweet['user']['id'],
             'created_at': remove_nulls(tweet['created_at']),
-            'in_reply_to_status_id': tweet['in_reply_to_status_id'],
-            'in_reply_to_user_id': tweet['in_reply_to_user_id'],
+            'in_reply_to_status_id': tweet.get('in_reply_to_status_id'),
+            'in_reply_to_user_id': tweet.get('in_reply_to_user_id'),
             'quoted_status_id': tweet.get('quoted_status_id', None),
             'retweet_count': tweet['retweet_count'],
             'favorite_count': tweet['favorite_count'],
@@ -294,14 +292,14 @@ def insert_tweet(connection,tweet):
             'withheld_copyright': remove_nulls(tweet.get('withheld_copyright', None)),
             'withheld_in_countries': remove_nulls(tweet.get('withheld_in_countries', None)),
             'source': remove_nulls(tweet['source']),
+            'lang': tweet.get('lang', None),
             'text': remove_nulls(text),
             'country_code': country_code,
             'state_code': remove_nulls(state_code),
-            'lang': tweet.get('lang', None),
             'place_name': remove_nulls(place_name),
-            'geo':None
-            }
-                                 )
+            'geo': None
+            })
+
         ########################################
         # insert into the tweet_urls table
         ########################################
