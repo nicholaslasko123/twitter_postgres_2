@@ -1,25 +1,41 @@
-#!/bin/bash
+#!/bin/sh
+# Define connection parameters for normalized and denormalized databases.
+NORMS_HOST=localhost
+NORMS_PORT=9002
+NORMS_DB=postgres
+NORMS_USER=postgres
+NORMS_PASSWORD=pass
 
-failed=false
+DENORM_HOST=localhost
+DENORM_PORT=9001
+DENORM_DB=postgres
+DENORM_USER=postgres
+DENORM_PASSWORD=pass
 
-mkdir -p results
+# Temporary files to store outputs.
+NORM_OUTPUT="norm_output.txt"
+DENORM_OUTPUT="denorm_output.txt"
 
-for problem in sql/*; do
-    printf "$problem "
-    problem_id=$(basename ${problem%.sql})
-    result="results/$problem_id.out"
-    expected="expected/$problem_id.out"
-    psql < $problem > $result
-    DIFF=$(diff -B $expected $result)
-    if [ -z "$DIFF" ]; then
-        echo pass
+# Loop through each SQL file in the sql folder.
+for sqlfile in sql/*.sql; do
+    echo "Running test: $sqlfile on normalized database..."
+    PGHOST=$NORMS_HOST PGPORT=$NORMS_PORT PGDATABASE=$NORMS_DB PGUSER=$NORMS_USER PGPASSWORD=$NORMS_PASSWORD \
+      psql -f "$sqlfile" > "$NORM_OUTPUT"
+    
+    echo "Running test: $sqlfile on denormalized database..."
+    PGHOST=$DENORM_HOST PGPORT=$DENORM_PORT PGDATABASE=$DENORM_DB PGUSER=$DENORM_USER PGPASSWORD=$DENORM_PASSWORD \
+      psql -f "$sqlfile" > "$DENORM_OUTPUT"
+    
+    # Compare the outputs.
+    if diff "$NORM_OUTPUT" "$DENORM_OUTPUT" > /dev/null; then
+        echo "PASS: $sqlfile results match."
     else
-        echo fail
-        failed=true
+        echo "FAIL: $sqlfile results differ!"
+        echo "Differences:"
+        diff "$NORM_OUTPUT" "$DENORM_OUTPUT"
     fi
+    echo "---------------------------------------"
 done
 
-if [ "$failed" = "true" ]; then
-    exit 2
-fi
-
+# Clean up temporary files.
+rm -f "$NORM_OUTPUT" "$DENORM_OUTPUT"
