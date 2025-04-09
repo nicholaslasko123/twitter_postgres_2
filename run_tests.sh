@@ -20,19 +20,19 @@ DENORM_OUTPUT="denorm_output.txt"
 for sqlfile in sql/*.sql; do
     echo "Running test: $sqlfile on normalized database..."
     PGHOST=$NORMS_HOST PGPORT=$NORMS_PORT PGDATABASE=$NORMS_DB PGUSER=$NORMS_USER PGPASSWORD=$NORMS_PASSWORD \
-      psql -f "$sqlfile" > "$NORM_OUTPUT"
-    
+      psql -f "$sqlfile" > "$NORM_OUTPUT" 2>&1
+
     echo "Running test: $sqlfile on denormalized database..."
     PGHOST=$DENORM_HOST PGPORT=$DENORM_PORT PGDATABASE=$DENORM_DB PGUSER=$DENORM_USER PGPASSWORD=$DENORM_PASSWORD \
-      psql -f "$sqlfile" > "$DENORM_OUTPUT"
-    
+      psql -f "$sqlfile" > "$DENORM_OUTPUT" 2>&1
+
     # Compare the outputs.
-    if diff "$NORM_OUTPUT" "$DENORM_OUTPUT" > /dev/null; then
+    if diff -B "$NORM_OUTPUT" "$DENORM_OUTPUT" > /dev/null; then
         echo "PASS: $sqlfile results match."
     else
         echo "FAIL: $sqlfile results differ!"
         echo "Differences:"
-        diff "$NORM_OUTPUT" "$DENORM_OUTPUT"
+        diff -B "$NORM_OUTPUT" "$DENORM_OUTPUT"
     fi
     echo "---------------------------------------"
 done
