@@ -480,10 +480,8 @@ if __name__ == '__main__':
                 with io.TextIOWrapper(archive.open(subfilename)) as f:
                     for i,line in enumerate(f):
 
-                        # load and insert the tweet
                         tweet = json.loads(line)
                         insert_tweet(connection,tweet)
 
-                        # print message
                         if i%args.print_every==0:
                             print(datetime.datetime.now(),filename,subfilename,'i=',i,'id=',tweet['id'])
