@@ -89,7 +89,6 @@ def insert_tweet(connection,tweet):
     You'll need to add appropriate SQL insert statements to get it to work.
     '''
 
-    # skip tweet if it's already inserted
     sql=sqlalchemy.sql.text('''
     SELECT id_tweets 
     FROM tweets
@@ -101,8 +100,6 @@ def insert_tweet(connection,tweet):
     if res.first() is not None:
         return
 
-    # insert tweet within a transaction;
-    # this ensures that a tweet does not get "partially" loaded
     connection.commit()
     with connection.begin() as trans:
 
@@ -114,7 +111,6 @@ def insert_tweet(connection,tweet):
         else:
             user_id_urls = get_id_urls(tweet['user']['url'], connection)
 
-        # create/update the user
         sql = sqlalchemy.sql.text('''
             INSERT INTO users (
                 id_users,
@@ -233,7 +229,6 @@ def insert_tweet(connection,tweet):
                 ''')
             par = {'id_users': tweet.get('in_reply_to_user_id')}
             connection.execute(sql, par)
-        # insert the tweet
         sql = sqlalchemy.sql.text('''
         INSERT INTO tweets
             (
@@ -340,13 +335,6 @@ def insert_tweet(connection,tweet):
             mentions = tweet['entities']['user_mentions']
 
         for mention in mentions:
-            # insert into users table;
-            # note that we already have done an insert into the users table above for the user who sent a tweet;
-            # that insert had lots of information inside of it (i.e. the user row was "hydrated");
-            # when we only have a mention of a user, however, we do not have all the information to store in the row;
-            # therefore, we must store the user info "unhydrated"
-            # HINT:
-            # use the ON CONFLICT DO NOTHING syntax
             sql=sqlalchemy.sql.text('''
             INSERT INTO users
                 (
@@ -362,7 +350,6 @@ def insert_tweet(connection,tweet):
               'id_users': mention['id']
               }
                                      )
-            # insert into tweet_mentions
             sql=sqlalchemy.sql.text('''
              INSERT INTO tweet_mentions
                 (
